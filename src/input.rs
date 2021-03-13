@@ -10,7 +10,12 @@ pub fn on_frame_start(egui_input: &mut egui::RawInput, mq_ctx: &mq::Context) {
         screen_size_in_points,
     ));
     egui_input.pixels_per_point = Some(pixels_per_point);
-    egui_input.time = Some(mq::date::now());
+
+    // mq::date::now() lies on web
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        egui_input.time = Some(mq::date::now());
+    }
 }
 
 /// miniquad sends special keys (backspace, delete, F1, ...) as characters.
@@ -18,6 +23,8 @@ pub fn on_frame_start(egui_input: &mut egui::RawInput, mq_ctx: &mq::Context) {
 /// We also ignore '\r', '\n', '\t'.
 /// Newlines are handled by the `Key::Enter` event.
 pub fn is_printable_char(chr: char) -> bool {
+    #![allow(clippy::manual_range_contains)]
+
     let is_in_private_use_area = '\u{e000}' <= chr && chr <= '\u{f8ff}'
         || '\u{f0000}' <= chr && chr <= '\u{ffffd}'
         || '\u{100000}' <= chr && chr <= '\u{10fffd}';
